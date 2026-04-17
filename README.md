@@ -91,61 +91,59 @@ Pilih salah satu:
 2. Create project baru
 3. Copy database credentials
 
-#### Step 3: Deploy ke Vercel
+#### Step 3: Deploy ke Vercel dengan Docker
 1. Buka https://vercel.com → Login GitHub account
 2. Import repository `RPLMantap`
-3. Vercel auto-detect `vercel.json` dan `package.json`
-4. **Klik "Deploy"**
+3. Vercel auto-detect `Dockerfile` dan `vercel.json`
+4. **Klik "Deploy"** - akan build Docker image dan deploy
 
 #### Step 4: Set Environment Variables di Vercel
 Dashboard Vercel → Settings → Environment Variables
 
-Copy semua dari `.env.vercel.example`, ubah values dengan:
-- `APP_KEY` → dari `php artisan key:generate --show` (lokal)
-- `APP_URL` → domain Vercel kamu (misal: `https://rplmantap-xxx.vercel.app`)
-- `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` → dari PlanetScale/Supabase
+Tambahkan semua dari `.env.vercel.example`:
 
-**Contoh:**
 ```
 APP_NAME=RPLMantap
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:9HBKoNjpiJtQcECMgEai5t3IhTWuRtgmR2P6MwzMzYE=
-APP_URL=https://rplmantap-123.vercel.app
+APP_URL=https://rplmantap-xxx.vercel.app
+
 DB_CONNECTION=mysql
 DB_HOST=aws.connect.psdb.cloud
 DB_PORT=3306
 DB_DATABASE=rplmantap
 DB_USERNAME=xxxxx
 DB_PASSWORD=xxxxx
+
 SESSION_DRIVER=cookie
 CACHE_STORE=array
 QUEUE_CONNECTION=sync
 LOG_CHANNEL=stderr
 ```
 
-#### Step 5: Jalankan Migration
-Setelah env variables tersimpan dan redeploy, buka terminal:
+#### Step 5: Redeploy & Jalankan Migration
+1. Setelah env variables tersimpan, Vercel otomatis redeploy
+2. Tunggu deployment selesai (~3-5 menit)
+3. Jalankan migration dari lokal:
 ```bash
 php artisan migrate --force
 ```
 
-Atau dari Vercel dashboard, gunakan built-in terminal (vercel cli) untuk run command.
-
 ### Troubleshooting
 
-**Error: 404 NOT_FOUND**
-- ✓ Pastikan semua env variables sudah di-set di Vercel
-- ✓ Verifikasi `APP_KEY` dan `APP_URL` benar
-- ✓ Cek logs di Vercel dashboard
+**Build gagal: PHP extension error**
+- ✓ Dockerfile sudah include semua extension yang dibutuhkan
+- ✓ Cek Docker build logs di Vercel → Deployments
+
+**Error: 502 Bad Gateway**
+- ✓ Pastikan Apache/PHP sudah fully started
+- ✓ Cek environment variables lengkap
+- ✓ Verify database connection accessible
 
 **Error: Database connection refused**
-- ✓ Database connection string harus accessible dari Vercel (public internet)
-- ✓ PlanetScale/Supabase support ini, SQLite lokal tidak bisa
-
-**Error: Build failed**
-- ✓ Pastikan `npm run build` berhasil lokal
-- ✓ Cek `vercel.json` config benar (lihat schema di file)
+- ✓ DB host harus publicly accessible (PlanetScale/Supabase sudah)
+- ✓ Verify `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` benar
 
 ### Notes
 
