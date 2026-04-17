@@ -57,3 +57,62 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Deploy Full Laravel to Vercel
+
+Project ini sudah disiapkan untuk deployment Laravel full-stack di Vercel melalui:
+
+- Serverless entrypoint: `api/index.php`
+- Vercel config: `vercel.json`
+- Default runtime aman untuk Vercel (`session`, `cache`, `logging`, `queue`)
+
+### 1) Build assets sebelum deploy
+
+```bash
+npm install
+npm run build
+```
+
+Pastikan folder `public/build` ter-generate.
+
+### 2) Set Environment Variables di Vercel
+
+Minimal wajib:
+
+- `APP_NAME=RPLMantap`
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `APP_KEY=base64:...` (generate dari local: `php artisan key:generate --show`)
+- `APP_URL=https://<domain-vercel-kamu>`
+- `DB_CONNECTION=mysql` (atau driver lain)
+- `DB_HOST=...`
+- `DB_PORT=3306`
+- `DB_DATABASE=...`
+- `DB_USERNAME=...`
+- `DB_PASSWORD=...`
+
+Opsional namun direkomendasikan:
+
+- `SESSION_DRIVER=cookie`
+- `CACHE_STORE=array`
+- `QUEUE_CONNECTION=sync`
+- `LOG_CHANNEL=stderr`
+
+### 3) Deploy
+
+Deploy via Git integration (recommended) atau CLI Vercel.
+
+### 4) Jalankan migration
+
+Setelah deploy pertama, jalankan migration ke database production:
+
+```bash
+php artisan migrate --force
+```
+
+Jika tidak menjalankan command ini dari Vercel environment, pastikan koneksi DB sama dengan env production.
+
+### Catatan penting
+
+- Runtime Vercel bersifat serverless, jadi hindari ketergantungan pada file lokal yang harus persisten.
+- Jika nanti butuh upload file user, gunakan object storage (mis. S3) dan set `FILESYSTEM_DISK=s3`.
