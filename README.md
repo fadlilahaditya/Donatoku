@@ -60,59 +60,96 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ## Deploy Full Laravel to Vercel
 
-Project ini sudah disiapkan untuk deployment Laravel full-stack di Vercel melalui:
+Project ini sudah siap deploy ke Vercel dengan serverless PHP + Vite build setup.
 
-- Serverless entrypoint: `api/index.php`
-- Vercel config: `vercel.json`
-- Default runtime aman untuk Vercel (`session`, `cache`, `logging`, `queue`)
+**Files:**
+- `api/index.php` → Serverless entrypoint
+- `vercel.json` → Build & routing config
+- `.env.vercel.example` → Template env untuk production
 
-### 1) Build assets sebelum deploy
+### Quickstart (5 menit)
 
+#### Step 1: Persiapan Lokal
 ```bash
 npm install
 npm run build
+git add .
+git commit -m "Ready for Vercel deploy"
+git push origin main
 ```
 
-Pastikan folder `public/build` ter-generate.
+#### Step 2: Setup Database Production
+Pilih salah satu:
 
-### 2) Set Environment Variables di Vercel
+**Option A: PlanetScale (MySQL) - RECOMMENDED**
+1. Buka https://planetscale.com → Sign up free
+2. Buat database baru
+3. Copy connection string
 
-Minimal wajib:
+**Option B: Supabase (PostgreSQL)**
+1. Buka https://supabase.com → Sign up
+2. Create project baru
+3. Copy database credentials
 
-- `APP_NAME=RPLMantap`
-- `APP_ENV=production`
-- `APP_DEBUG=false`
-- `APP_KEY=base64:...` (generate dari local: `php artisan key:generate --show`)
-- `APP_URL=https://<domain-vercel-kamu>`
-- `DB_CONNECTION=mysql` (atau driver lain)
-- `DB_HOST=...`
-- `DB_PORT=3306`
-- `DB_DATABASE=...`
-- `DB_USERNAME=...`
-- `DB_PASSWORD=...`
+#### Step 3: Deploy ke Vercel
+1. Buka https://vercel.com → Login GitHub account
+2. Import repository `RPLMantap`
+3. Vercel auto-detect `vercel.json` dan `package.json`
+4. **Klik "Deploy"**
 
-Opsional namun direkomendasikan:
+#### Step 4: Set Environment Variables di Vercel
+Dashboard Vercel → Settings → Environment Variables
 
-- `SESSION_DRIVER=cookie`
-- `CACHE_STORE=array`
-- `QUEUE_CONNECTION=sync`
-- `LOG_CHANNEL=stderr`
+Copy semua dari `.env.vercel.example`, ubah values dengan:
+- `APP_KEY` → dari `php artisan key:generate --show` (lokal)
+- `APP_URL` → domain Vercel kamu (misal: `https://rplmantap-xxx.vercel.app`)
+- `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` → dari PlanetScale/Supabase
 
-### 3) Deploy
+**Contoh:**
+```
+APP_NAME=RPLMantap
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:9HBKoNjpiJtQcECMgEai5t3IhTWuRtgmR2P6MwzMzYE=
+APP_URL=https://rplmantap-123.vercel.app
+DB_CONNECTION=mysql
+DB_HOST=aws.connect.psdb.cloud
+DB_PORT=3306
+DB_DATABASE=rplmantap
+DB_USERNAME=xxxxx
+DB_PASSWORD=xxxxx
+SESSION_DRIVER=cookie
+CACHE_STORE=array
+QUEUE_CONNECTION=sync
+LOG_CHANNEL=stderr
+```
 
-Deploy via Git integration (recommended) atau CLI Vercel.
-
-### 4) Jalankan migration
-
-Setelah deploy pertama, jalankan migration ke database production:
-
+#### Step 5: Jalankan Migration
+Setelah env variables tersimpan dan redeploy, buka terminal:
 ```bash
 php artisan migrate --force
 ```
 
-Jika tidak menjalankan command ini dari Vercel environment, pastikan koneksi DB sama dengan env production.
+Atau dari Vercel dashboard, gunakan built-in terminal (vercel cli) untuk run command.
 
-### Catatan penting
+### Troubleshooting
 
-- Runtime Vercel bersifat serverless, jadi hindari ketergantungan pada file lokal yang harus persisten.
-- Jika nanti butuh upload file user, gunakan object storage (mis. S3) dan set `FILESYSTEM_DISK=s3`.
+**Error: 404 NOT_FOUND**
+- ✓ Pastikan semua env variables sudah di-set di Vercel
+- ✓ Verifikasi `APP_KEY` dan `APP_URL` benar
+- ✓ Cek logs di Vercel dashboard
+
+**Error: Database connection refused**
+- ✓ Database connection string harus accessible dari Vercel (public internet)
+- ✓ PlanetScale/Supabase support ini, SQLite lokal tidak bisa
+
+**Error: Build failed**
+- ✓ Pastikan `npm run build` berhasil lokal
+- ✓ Cek `vercel.json` config benar (lihat schema di file)
+
+### Notes
+
+- Vercel filesystem ephemeral → hindari menyimpan file permanently
+- Queue jobs sync (tidak ada background worker) → cocok untuk app kecil/medium
+- Session cookie-based → tidak perlu filesystem
+- Logs ke stderr → visible di Vercel Function Logs
